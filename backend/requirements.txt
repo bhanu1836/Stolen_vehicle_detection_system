@@ -1,0 +1,14 @@
+torch
+setuptools<81
+opencv-python
+numpy
+fastapi
+uvicorn
+paddleocr
+paddlepaddle
+pillow
+python-multipart
+ultralytics
+seaborn
+yolov5
+gitpython
