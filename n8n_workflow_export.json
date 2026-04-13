@@ -1,0 +1,177 @@
+{
+  "name": "Stolen Vehicle Detection - Email Notifications",
+  "nodes": [
+    {
+      "id": "webhook_trigger",
+      "displayName": "Webhook - Receive Events",
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "typeVersion": 1,
+      "webhookId": "stolen-vehicles",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stolen-vehicles",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "event_type_switch",
+      "displayName": "Route by Event Type",
+      "type": "@n8n/n8n-nodes-base.switch",
+      "position": [450, 300],
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "expression",
+        "cases": [
+          {
+            "condition": "$json.event_type === 'vehicle_detected'",
+            "output": 0
+          },
+          {
+            "condition": "$json.event_type === 'plate_detected_police'",
+            "output": 1
+          },
+          {
+            "condition": "$json.event_type === 'case_accepted'",
+            "output": 2
+          },
+          {
+            "condition": "$json.event_type === 'case_status_updated'",
+            "output": 3
+          }
+        ],
+        "fallbackOutput": 4
+      }
+    },
+    {
+      "id": "customer_vehicle_detected_email",
+      "displayName": "Send Email - Vehicle Detected",
+      "type": "@n8n/n8n-nodes-base.emailSend",
+      "position": [750, 100],
+      "typeVersion": 1,
+      "credentials": {
+        "email": "gmail"
+      },
+      "parameters": {
+        "fromEmail": "noreply@stolen-vehicle-detection.com",
+        "toEmail": "={{ $json.customer_email }}",
+        "subject": "🚨 Your Vehicle {{ $json.vehicle_number }} Detected!",
+        "emailType": "html",
+        "htmlEmail": "<h2>🚨 Vehicle Detection Alert</h2>\n<p>Dear {{ $json.customer_name }},</p>\n<p>Good news! Your reported stolen vehicle <strong>{{ $json.vehicle_number }}</strong> has been detected!</p>\n<div style='background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;'>\n  <p><strong>📍 Location:</strong> {{ $json.location }}</p>\n  <p><strong>⏰ Time:</strong> {{ $json.detected_at }}</p>\n  <p><strong>👮 Case ID:</strong> {{ $json.case_id }}</p>\n</div>\n<p>A police officer will be investigating this case. You will receive updates as the investigation progresses.</p>\n<p>Best regards,<br/><strong>Smart Plate AI - Stolen Vehicle Detection System</strong></p>"
+      }
+    },
+    {
+      "id": "police_vehicle_detected_email",
+      "displayName": "Send Email - Police Alert",
+      "type": "@n8n/n8n-nodes-base.emailSend",
+      "position": [750, 250],
+      "typeVersion": 1,
+      "credentials": {
+        "email": "gmail"
+      },
+      "parameters": {
+        "fromEmail": "noreply@stolen-vehicle-detection.com",
+        "toEmail": "={{ $json.police_email }}",
+        "subject": "🚔 NEW CASE: Vehicle {{ $json.vehicle_number }} Detected",
+        "emailType": "html",
+        "htmlEmail": "<h2>🚔 New Case Assignment</h2>\n<p>Officer {{ $json.police_name }},</p>\n<p>A stolen vehicle matching reports has been detected!</p>\n<div style='background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;'>\n  <h3>📊 Vehicle Details:</h3>\n  <p><strong>Plate:</strong> {{ $json.vehicle_number }}</p>\n  <p><strong>Type:</strong> {{ $json.vehicle_type }}</p>\n  <p><strong>Color:</strong> {{ $json.vehicle_color }}</p>\n  <p><strong>Location:</strong> {{ $json.location }}</p>\n  <p><strong>Time:</strong> {{ $json.detected_at }}</p>\n</div>\n<div style='background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0;'>\n  <h3>👤 Reporter Information:</h3>\n  <p><strong>Name:</strong> {{ $json.customer_name }}</p>\n  <p><strong>Phone:</strong> {{ $json.customer_phone }}</p>\n</div>\n<p><strong>🔗 Case ID:</strong> {{ $json.case_id }}</p>\n<p style='margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;'>\n  <button style='background-color: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; cursor: pointer;'>\n    <a href='https://your-app-domain.com/cases/{{ $json.case_id }}' style='color: white; text-decoration: none;'>View Case Details</a>\n  </button>\n</p>\n<p>Please log in to the portal to accept this case and begin investigation.</p>\n<p>Best regards,<br/><strong>Smart Plate AI - Police Dispatch System</strong></p>"
+      }
+    },
+    {
+      "id": "customer_case_accepted_email",
+      "displayName": "Send Email - Case Accepted",
+      "type": "@n8n/n8n-nodes-base.emailSend",
+      "position": [750, 400],
+      "typeVersion": 1,
+      "credentials": {
+        "email": "gmail"
+      },
+      "parameters": {
+        "fromEmail": "noreply@stolen-vehicle-detection.com",
+        "toEmail": "={{ $json.customer_email }}",
+        "subject": "✓ Officer Assigned: Case {{ $json.case_id }}",
+        "emailType": "html",
+        "htmlEmail": "<h2>✓ Case Accepted</h2>\n<p>Dear {{ $json.customer_name }},</p>\n<p>Great news! A police officer has been assigned to your case.</p>\n<div style='background-color: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0;'>\n  <p><strong>Officer Name:</strong> {{ $json.police_name }}</p>\n  <p><strong>Officer Phone:</strong> {{ $json.police_phone }}</p>\n  <p><strong>Vehicle Number:</strong> {{ $json.vehicle_number }}</p>\n  <p><strong>Case ID:</strong> {{ $json.case_id }}</p>\n</div>\n<p>The officer will keep you updated on the investigation progress.</p>\n<p>Best regards,<br/><strong>Smart Plate AI - Stolen Vehicle Detection System</strong></p>"
+      }
+    },
+    {
+      "id": "customer_status_update_email",
+      "displayName": "Send Email - Status Update",
+      "type": "@n8n/n8n-nodes-base.emailSend",
+      "position": [750, 550],
+      "typeVersion": 1,
+      "credentials": {
+        "email": "gmail"
+      },
+      "parameters": {
+        "fromEmail": "noreply@stolen-vehicle-detection.com",
+        "toEmail": "={{ $json.customer_email }}",
+        "subject": "📋 Update on Your Vehicle {{ $json.vehicle_number }}",
+        "emailType": "html",
+        "htmlEmail": "<h2>📋 Case Status Update</h2>\n<p>Dear Customer,</p>\n<p>There's an update on your reported vehicle <strong>{{ $json.vehicle_number }}</strong>:</p>\n<div style='background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;'>\n  <p><strong>Status:</strong> <span style='color: #0066cc; font-size: 18px; font-weight: bold;'>{{ $json.status | toUpper }}</span></p>\n  <p><strong>Note:</strong> {{ $json.note }}</p>\n  <p><strong>Updated:</strong> {{ $json.updated_at }}</p>\n</div>\n<p>If you have any questions, please contact the investigating officer.</p>\n<p>Best regards,<br/><strong>Smart Plate AI - Stolen Vehicle Detection System</strong></p>"
+      }
+    },
+    {
+      "id": "error_handler",
+      "displayName": "Log Unknown Event",
+      "type": "@n8n/n8n-nodes-base.logStreamMessage",
+      "position": [750, 700],
+      "typeVersion": 1,
+      "parameters": {
+        "message": "Unknown event type received: {{ $json.event_type }}"
+      }
+    }
+  ],
+  "connections": {
+    "webhook_trigger": {
+      "main": [
+        [
+          {
+            "node": "event_type_switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "event_type_switch": {
+      "main": [
+        [
+          {
+            "node": "customer_vehicle_detected_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "police_vehicle_detected_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "customer_case_accepted_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "customer_status_update_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "error_handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

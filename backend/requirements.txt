@@ -4,8 +4,14 @@ opencv-python
 numpy
 fastapi
 uvicorn
+motor
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic[email]
+python-dotenv
 paddleocr
 paddlepaddle
+requests
 pillow
 python-multipart
 ultralytics
